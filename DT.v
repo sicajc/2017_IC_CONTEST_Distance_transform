@@ -35,6 +35,10 @@ module DT(input 			clk,
 
   reg[4:0] current_state,next_state;
 
+  //flag
+  reg rd_rom_flag,wb_ram_done,forward_flag,fetch_rom_forward_flag,forward_done;
+  reg backward_flag,backward_done,fetch_rom_backward_flag;
+
   /*--------------------MAIN_CTR--------------------*/
   always @(posedge clk or posedge reset)
   begin
@@ -44,19 +48,89 @@ module DT(input 			clk,
   always @(*)
   begin
     case(current_state)
-
-
-
+      IDLE:
+      begin
+        next_state = RD_ROM;
+      end
+      RD_ROM:
+      begin
+        next_state = WB_RAM;
+      end
+      WB_RAM:
+      begin
+        if(rd_rom_flag)
+        begin
+          next_state = RD_ROM;
+        end
+        else if(wb_ram_done)
+        begin
+          next_state = FETCH_ROM_FORWARD;
+        end
+        else
+        begin
+          next_state = WB_RAM;
+        end
+      end
+      FETCH_ROM_FORWARD:
+      begin
+        next_state = FETCH_RAM_FORWARD;
+      end
+      FETCH_RAM_FORWARD:
+      begin
+        next_state = forward_flag ? FORWARD : FETCH_RAM_FORWARD;
+      end
+      FORWARD:
+      begin
+        if(forward_done)
+        begin
+          next_state = BACKWARD_PREPROCESS;
+        end
+        else if(fetch_rom_forward_flag)
+        begin
+          next_state = FETCH_ROM_FORWARD;
+        end
+        else
+        begin
+          next_state = FETCH_RAM_FORWARD;
+        end
+      end
+      BACKWARD_PREPROCESS:
+      begin
+        next_state = FETCH_ROM_BACKWARD;
+      end
+      FETCH_ROM_BACKWARD:
+      begin
+        next_state = FETCH_RAM_BACKWARD;
+      end
+      FETCH_RAM_BACKWARD:
+      begin
+        next_state = backward_flag ? BACKWARD : FETCH_RAM_BACKWARD;
+      end
+      BACKWARD:
+      begin
+        if(backward_done)
+        begin
+          next_state = DONE;
+        end
+        else if(fetch_rom_backward_flag)
+        begin
+          next_state = FETCH_ROM_BACKWARD;
+        end
+        else
+        begin
+          next_state = FETCH_RAM_BACKWARD;
+        end
+      end
+      DONE:
+      begin
+        next_state = IDLE;
+      end
       default:
       begin
-
+        next_state = IDLE;
       end
     endcase
-
   end
-
-
-
 
   //ref_point_reg
   always @(posedge clk or posedge reset)
