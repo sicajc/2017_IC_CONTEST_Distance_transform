@@ -12,17 +12,17 @@ module DT(input 			clk,
 
 
 /*----------PARAMETERS--------*/
-parameter IDLE = 'd0;
-parameter  RD_ROM= 'd1;
-parameter  WB_RAM= 'd2;
-parameter  FETCH_ROM_FORWARD= 'd3;
-parameter  FETCH_RAM_FORWARD= 'd4;
-parameter  FORWARD= 'd5;
-parameter  BACKWARD_PREPROCESS= 'd6;
-parameter  FETCH_ROM_BACKWARD= 'd7;
-parameter  FETCH_RAM_BACKWARD= 'd8;
-parameter  BACKWARD= 'd9;
-parameter  DONE= 'd10;
+parameter IDLE                 = 'd0;
+parameter  RD_ROM              = 'd1;
+parameter  WB_RAM              = 'd2;
+parameter  FETCH_ROM_FORWARD   = 'd3;
+parameter  FETCH_RAM_FORWARD   = 'd4;
+parameter  FORWARD             = 'd5;
+parameter  BACKWARD_PREPROCESS = 'd6;
+parameter  FETCH_ROM_BACKWARD  = 'd7;
+parameter  FETCH_RAM_BACKWARD  = 'd8;
+parameter  BACKWARD            = 'd9;
+parameter  DONE                = 'd10;
 
 //!Registers
 reg[9:0] row_and_rom_index_reg;
@@ -32,9 +32,20 @@ reg[3:0] fetch_ram_counter_reg;
 reg[7:0] for_back_reg[0:3];
 reg[7:0] ref_point_reg;
 reg[15:0] rom_to_ram_temp_reg;
-
 reg[4:0] current_state,next_state;
 
+//state flags
+wire state_IDLE                = current_state == IDLE;
+wire state_RD_ROM              = current_state == RD_ROM;
+wire state_WB_RAM              = current_state == WB_RAM;
+wire state_FETCH_ROM_FORWARD   = current_state == FETCH_ROM_FORWARD;
+wire state_FETCH_RAM_FORWARD   = current_state == FETCH_RAM_FORWARD;
+wire state_FORWARD             = current_state == FORWARD;
+wire state_BACKWARD_PREPROCESS = current_state == BACKWARD_PREPROCESS;
+wire state_FETCH_ROM_BACKWARD  = current_state == FETCH_ROM_BACKWARD ;
+wire state_FETCH_RAM_BACKWARD  = current_state == FETCH_RAM_BACKWARD;
+wire state_BACKWARD            = current_state == BACKWARD;
+wire state_DONE                = current_state == DONE;
 /*--------------------MAIN_CTR--------------------*/
 always @(posedge clk or posedge reset)
 begin
@@ -56,21 +67,21 @@ begin
 end
 
 
-
-
 //ref_point_reg
 always @(posedge clk or posedge reset)
 begin
     if (reset)
     begin
-
+        ref_point_reg <= 'd0;
     end
     else
     begin
-
-
-
-
+        if (state_FETCH_RAM_BACKWARD)
+            ref_point_reg <= res_di;
+        else if (state_BACKWARD_PREPROCESS)
+            ref_point_reg <= 'd0;
+        else
+            ref_point_reg <= ref_point_reg;
     end
 end
 
@@ -87,9 +98,33 @@ begin
     end
     else
     begin
+        case(current_state)
+            FETCH_RAM_FORWARD,FETCH_RAM_BACKWARD:
+            begin
+                for_back_reg[counter_reg] <= res_di;
+            end
+            BACKWARD_PREPROCESS:
+            begin
+                for(i = 0;i<4;i = i+1)
+                begin
+                    for_back_reg[i] <= 'd0;
+                end
+            end
 
+            default:
+            begin
+                for(i = 0;i<4;i = i+1)
+                begin
+                    for_back_reg[i] <= for_back_reg[i];
+                end
+            end
+        endcase
     end
 end
+
+wire rd_rom_done_flag = row_and_rom_index_reg == 'd1023;
+wire wb_ram_done_flag = counter_reg == 'd15;
+
 //col_and_ram_index_reg
 always @(posedge clk or posedge reset)
 begin
@@ -99,10 +134,24 @@ begin
     end
     else
     begin
+        case(current_state)
+            WB_RAM:
+            begin
+                col_and_ram_index_reg <= wb_ram_done_flag ? 'd0 : rd_rom_done_flag ? 'd0 : col_and_ram_index_reg + 1;
+            end
+			FORWARD:
+			begin
 
+			end
 
+            default:
+            begin
+                col_and_ram_index_reg <= col_and_ram_index_reg;
+            end
+        endcase
     end
 end
+
 //row and rom index reg
 always @(posedge clk or posedge reset)
 begin
@@ -112,9 +161,15 @@ begin
     end
     else
     begin
+        case(current_state)
+            RD_ROM:
+            begin
+                row_and_rom_index_reg <= wb_ram_done_flag ? 'd0 : rd_rom_done_flag ? row_and_rom_index_reg + 1 : row_and_rom_index_reg;
+            end
 
 
 
+        endcase
     end
 end
 //ref_point_reg
@@ -141,7 +196,7 @@ begin
 end
 
 
-/*----------------------Distance_transform_unit------------------*/
+/*---------------------Distance_transform_unit------------------*/
 
 wire[7:0] min1;
 four_num_sorter #(8) MIN1(.a(for_back_reg[0]),.b(for_back_reg[1]),.c(for_back_reg[2]),.d(for_back_reg[3]),.min(min1));
