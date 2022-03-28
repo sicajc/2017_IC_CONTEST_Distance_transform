@@ -46,6 +46,18 @@ wire state_FETCH_ROM_BACKWARD  = current_state == FETCH_ROM_BACKWARD ;
 wire state_FETCH_RAM_BACKWARD  = current_state == FETCH_RAM_BACKWARD;
 wire state_BACKWARD            = current_state == BACKWARD;
 wire state_DONE                = current_state == DONE;
+
+
+wire rd_rom_done_flag = row_and_rom_index_reg == 'd1023;
+wire wb_ram_done_flag = counter_reg == 'd15;
+wire forward_data_fetch_done_flag = fetch_ram_counter_reg == 'd3;
+wire forward_window_done_flag = row_and_rom_index_reg == 'd0;
+
+wire refetch_rom_flag = counter_reg == 'd15;
+wire backward_data_fetch_done_flag = fetch_ram_counter_reg == 'd4;
+wire backward_window_done_flag = row_and_rom_index_reg =='d1023;
+
+
 /*--------------------MAIN_CTR--------------------*/
 always @(posedge clk or posedge reset)
 begin
@@ -55,16 +67,90 @@ end
 always @(*)
 begin
     case(current_state)
-
-
-
+        IDLE:
+        begin
+            next_state = RD_ROM;
+        end
+        RD_ROM:
+        begin
+            next_state = WB_RAM;
+        end
+        WB_RAM:
+        begin
+            if (rd_rom_done_flag)
+            begin
+                next_state = RD_ROM;
+            end
+            else if (wb_ram_done_flag)
+            begin
+                next_state = FETCH_ROM_FORWARD;
+            end
+            else
+            begin
+                next_state = WB_RAM;
+            end
+        end
+        FETCH_ROM_FORWARD:
+        begin
+            next_state = FETCH_RAM_FORWARD;
+        end
+        FETCH_RAM_FORWARD:
+        begin
+            next_state = forward_data_fetch_done_flag ? FORWARD : FETCH_RAM_FORWARD;
+        end
+        FORWARD:
+        begin
+            if (forward_window_done_flag)
+            begin
+                next_state = BACKWARD_PREPROCESS;
+            end
+            else if (refetch_rom_flag)
+            begin
+                next_state = FETCH_ROM_FORWARD;
+            end
+            else
+            begin
+                next_state = FETCH_RAM_FORWARD;
+            end
+        end
+        BACKWARD_PREPROCESS:
+        begin
+            next_state = FETCH_ROM_BACKWARD;
+        end
+        FETCH_ROM_BACKWARD:
+        begin
+            next_state = FETCH_RAM_BACKWARD;
+        end
+        FETCH_RAM_BACKWARD:
+        begin
+            next_state = backward_data_fetch_done_flag ? BACKWARD : FETCH_RAM_BACKWARD;
+        end
+        BACKWARD:
+        begin
+            if (backward_window_done_flag)
+            begin
+                next_state = DONE;
+            end
+            else if (refetch_rom_flag)
+            begin
+                next_state = FETCH_ROM_BACKWARD;
+            end
+            else
+            begin
+                next_state = FETCH_RAM_BACKWARD;
+            end
+        end
+        DONE:
+        begin
+            next_state = IDLE;
+        end
         default:
         begin
-
+            next_state = IDLE;
         end
     endcase
-
 end
+
 
 
 //ref_point_reg
@@ -122,8 +208,7 @@ begin
     end
 end
 
-wire rd_rom_done_flag = row_and_rom_index_reg == 'd1023;
-wire wb_ram_done_flag = counter_reg == 'd15;
+
 
 //col_and_ram_index_reg
 always @(posedge clk or posedge reset)
@@ -139,10 +224,10 @@ begin
             begin
                 col_and_ram_index_reg <= wb_ram_done_flag ? 'd0 : rd_rom_done_flag ? 'd0 : col_and_ram_index_reg + 1;
             end
-			FORWARD:
-			begin
+            FORWARD:
+            begin
 
-			end
+            end
 
             default:
             begin
