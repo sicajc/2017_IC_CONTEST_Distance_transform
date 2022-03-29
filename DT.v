@@ -255,7 +255,7 @@ begin
     end
 end
 //ref_point_reg
-always @(posedge clk or posedge reset)
+always @(posedge reset)
 begin
     if (reset)
     begin
@@ -272,7 +272,7 @@ end
 
 reg hello_world;
 //rom to ram temp reg
-always @(posedge clk or posedge reset)
+always @(posedge clk)
 begin
 
 
@@ -291,6 +291,9 @@ wire is_backward_window_flag;
 assign compared_pixel = is_backward_window_flag ? ref_point_reg : 'd128;
 assign resulted_min   = min1 < compared_pixel ? min1 + 'd1 : compared_pixel + 'd1;
 
+
+assign compared_pixel = is_backward_window_flag ? ref_point_reg : 'd128;
+assign resulted_min   = min1 < compared_pixel ? min1 + 'd1 : compared_pixel + 'd1;
 
 assign compared_pixel = is_backward_window_flag ? ref_point_reg : 'd128;
 assign resulted_min   = min1 < compared_pixel ? min1 + 'd1 : compared_pixel + 'd1;
