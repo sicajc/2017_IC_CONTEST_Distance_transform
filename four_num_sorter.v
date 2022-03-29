@@ -1,5 +1,5 @@
 `include "two_num_sorter.v"
-module four_num_sorter#(parameter DATA_WIDTH)
+module four_num_sorter#(parameter DATA_WIDTH=4)
                        (a,
                         b,
                         c,

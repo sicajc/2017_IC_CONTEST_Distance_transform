@@ -1,4 +1,4 @@
-module two_num_sorter#(parameter DATA_WIDTH)
+module two_num_sorter#(parameter DATA_WIDTH=4)
                       (a,
                        b,
                        min,

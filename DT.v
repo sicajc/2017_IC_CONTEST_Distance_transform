@@ -1,3 +1,4 @@
+`include "four_num_sorter.v"
 module DT(input 			clk,
           input			reset,
           output	reg		done,
@@ -48,14 +49,14 @@ wire state_BACKWARD            = current_state == BACKWARD;
 wire state_DONE                = current_state == DONE;
 
 
-wire rd_rom_done_flag = row_and_rom_index_reg == 'd1023;
-wire wb_ram_done_flag = counter_reg == 'd15;
+wire rd_rom_done_flag             = row_and_rom_index_reg == 'd1023;
+wire wb_ram_done_flag             = counter_reg == 'd15;
 wire forward_data_fetch_done_flag = fetch_ram_counter_reg == 'd3;
-wire forward_window_done_flag = row_and_rom_index_reg == 'd0;
+wire forward_window_done_flag     = row_and_rom_index_reg == 'd0;
 
-wire refetch_rom_flag = counter_reg == 'd15;
+wire refetch_rom_flag              = counter_reg == 'd15;
 wire backward_data_fetch_done_flag = fetch_ram_counter_reg == 'd4;
-wire backward_window_done_flag = row_and_rom_index_reg =='d1023;
+wire backward_window_done_flag     = row_and_rom_index_reg == 'd1023;
 
 
 /*--------------------MAIN_CTR--------------------*/
@@ -150,8 +151,6 @@ begin
         end
     endcase
 end
-
-
 
 //ref_point_reg
 always @(posedge clk or posedge reset)
@@ -252,8 +251,6 @@ begin
                 row_and_rom_index_reg <= wb_ram_done_flag ? 'd0 : rd_rom_done_flag ? row_and_rom_index_reg + 1 : row_and_rom_index_reg;
             end
 
-
-
         endcase
     end
 end
@@ -272,6 +269,8 @@ begin
     end
 end
 
+
+reg hello_world;
 //rom to ram temp reg
 always @(posedge clk or posedge reset)
 begin
@@ -288,6 +287,10 @@ four_num_sorter #(8) MIN1(.a(for_back_reg[0]),.b(for_back_reg[1]),.c(for_back_re
 
 wire[7:0] resulted_min;
 wire is_backward_window_flag;
+
+assign compared_pixel = is_backward_window_flag ? ref_point_reg : 'd128;
+assign resulted_min   = min1 < compared_pixel ? min1 + 'd1 : compared_pixel + 'd1;
+
 
 assign compared_pixel = is_backward_window_flag ? ref_point_reg : 'd128;
 assign resulted_min   = min1 < compared_pixel ? min1 + 'd1 : compared_pixel + 'd1;
