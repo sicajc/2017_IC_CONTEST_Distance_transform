@@ -295,6 +295,8 @@ assign resulted_min   = min1 < compared_pixel ? min1 + 'd1 : compared_pixel + 'd
 assign compared_pixel = is_backward_window_flag ? ref_point_reg : 'd128;
 assign resulted_min   = min1 < compared_pixel ? min1 + 'd1 : compared_pixel + 'd1;
 
+assign compared_pixel = is_backward_window_flag ? ref_point_reg : 'd128;
+assign resulted_min   = min1 < compared_pixel ? min1 + 'd1 : compared_pixel + 'd1;
 
 
 endmodule
